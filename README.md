@@ -2,7 +2,7 @@
 
 ## Requirement
 - python 3
-- If needed, create a requiments.txt for dependencies and run following commands
+- If needed, install the used modules included in the requirements.txt:
 ```
 pip install -r requirements.txt
 ```
@@ -14,3 +14,7 @@ pip install -r requirements.txt
 - `src` contains py files
 - `notebooks` contains Jupyter notebook files
 - `data` contains two folder: `raw` and `interim`
+
+## Building
+- data
+  - run **`python run.py data`** or **`python3 run.py data`** to clean the raw data, the results will be saved in the folder `data/interim`
