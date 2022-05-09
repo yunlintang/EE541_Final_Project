@@ -88,7 +88,42 @@ def ConvertToFloat(x):
     return float(x)
 
 
-def PreprocessMM(inpath,outpath,save=False,):
+def Cas(x):
+    '''
+    For cast feature:
+    Input a string of JSON, get the values for which the
+    keys are "name"(name of actors) then convert the string into a list
+    '''
+    # remove some invalid char
+    x = re.sub("\"[^\"]*\",","null,",x)
+    x = x.replace("\"", "")
+    x = x.replace("\'","\"").replace("None","null")
+    x = re.sub(r'\\','',x)
+    try:
+        x_json = json.loads(x)
+    except:
+        return
+    return [i['name'] for i in x_json]
+
+
+def Cre(x):
+    '''
+    For crew feature:
+    Input a string of JSON, get the values for which the
+    keys are "name"(name of directors) then convert the string into a list
+    '''
+    x = re.sub("\"[^\"]*\",","null,",x)
+    x = x.replace("\"", "")
+    x = x.replace("\'","\"").replace("None","null")
+    x = re.sub(r'\\','',x)
+    x_json = json.loads(x)
+    x_list = [i['name'] for i in x_json if i['job'] == 'Director' ]
+    if len(x_list) == 0:
+        return 
+    return x_list
+
+
+def PreprocessMM(inpath,outpath,save=False):
     '''
     clean the raw movies_metadata.csv dataset
     
@@ -123,3 +158,28 @@ def PreprocessMM(inpath,outpath,save=False,):
         print("the cleaned dataset of movies_metadata is saved in {}".format(outpath))
     
     return df_mm
+
+
+def PreprocessC(inpath,outpath,save=False):
+    '''
+    clean the raw credits.csv dataset
+    
+    Params:
+        path: path of the input dataset(Ex. '../data/raw/credits.csv')
+        save: specify if the cleaned dataset 
+              need to be saved in the '../data/interim/'
+    '''
+    # read data
+    filename = "credits.csv"
+    df_c = pd.read_csv(inpath+filename)
+    
+    # convert the json data
+    df_c['cast'] = df_c['cast'].apply(Cas)
+    df_c['crew'] = df_c['crew'].apply(Cre)
+    
+    if save:
+        filename = "credits_clean.csv"
+        df_c.to_csv(outpath+filename)
+        print("the cleaned dataset of credits is saved in {}".format(outpath))
+    
+    return df_c
