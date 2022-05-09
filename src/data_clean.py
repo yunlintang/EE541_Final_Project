@@ -16,29 +16,7 @@ def Spok_Lang(x):
     # would have invalid escape error
     x = re.sub(r'\\','',x)
     x_json = json.loads(x.replace("\'","\""))
-    return [i['iso_639_1'] for i in x_json]
-
-
-def Prod_Count(x):
-    '''
-    For production_countries feature:
-    Input a string of JSON, get the values for which the
-    keys are "iso_639_1" (stands for country code) then 
-    convert the string into a list
-    '''
-    if ((x is np.nan) or (x=='[]')):
-        return np.nan
-    
-    try:
-        # some observations have ill-formatted values
-        # just drop them
-        x_json = json.loads(x.replace("\'","\""))
-        x_list = [i['iso_3166_1'] for i in x_json]
-    except:
-        return np.nan
-    
-    x_json = json.loads(x.replace("\'","\""))
-    return [i['iso_3166_1'] for i in x_json]
+    return [i['iso_639_1'] for i in x_json] 
 
 
 def Gen(x):
@@ -53,6 +31,26 @@ def Gen(x):
     x_json = json.loads(x.replace("\'","\""))
     return [i['name'] for i in x_json]
 
+    
+def Prod_Count(x):
+    '''
+    For production_countries feature:
+    Input a string of JSON, get the values for which the
+    keys are "iso_639_1" (stands for country code) then 
+    convert the string into a list
+    '''
+    if ((x is np.nan) or (x=='[]')):
+        return np.nan
+    
+    try:
+        # some observations have ill-formatted values just drop them
+        x_json = json.loads(x.replace("\'","\""))
+        x_list = [i['iso_3166_1'] for i in x_json]
+    except:
+        return np.nan
+    
+    return x_list
+
 
 def Prod_Com(x):
     '''
@@ -64,15 +62,13 @@ def Prod_Com(x):
         return np.nan
     
     try:
-        # some observations have ill-formatted values
-        # just drop them
+        # some observations have ill-formatted values just drop them
         x_json = json.loads(x.replace("\'","\""))
         x_list = [i['name'] for i in x_json]
     except:
         return np.nan
     
-    x_json = json.loads(x.replace("\'","\""))
-    return [i['name'] for i in x_json]
+    return x_list
 
 
 def ConvertToFloat(x):
@@ -88,22 +84,31 @@ def ConvertToFloat(x):
     return float(x)
 
 
-def Cas(x):
+def Cas(X):
     '''
     For cast feature:
     Input a string of JSON, get the values for which the
     keys are "name"(name of actors) then convert the string into a list
     '''
     # remove some invalid char
-    x = re.sub("\"[^\"]*\",","null,",x)
+    x = re.sub("\"[^\"]*\",","null,",X)
+    x = re.sub("\"[^\"]*\"}","null}",x)
     x = x.replace("\"", "")
     x = x.replace("\'","\"").replace("None","null")
+    # replace the character into null
     x = re.sub(r'\\','',x)
+    x = re.sub("\"character\":\s.+?(?=,\s\")","\"character\": null",x)
+    
     try:
         x_json = json.loads(x)
     except:
         return
-    return [i['name'] for i in x_json]
+    
+    x_list = [i['name'] for i in x_json]
+    
+    if len(x_list) == 0:
+        return
+    return x_list
 
 
 def Cre(x):
@@ -118,8 +123,28 @@ def Cre(x):
     x = re.sub(r'\\','',x)
     x_json = json.loads(x)
     x_list = [i['name'] for i in x_json if i['job'] == 'Director' ]
+    
     if len(x_list) == 0:
         return 
+    return x_list
+
+
+def Keyw(x):
+    x = re.sub("\"[^\"]*\",","null,",x)
+    x = re.sub("\"[^\"]*\"}","null}",x)
+    x = x.replace("\"", "")
+    x = x.replace("\'","\"").replace("None","null")
+    x = re.sub(r'\\','',x)
+    
+    try:
+        x_json = json.loads(x)
+    except:
+        return
+    
+    x_list = [i['name'] for i in x_json]
+    if len(x_list) == 0:
+        return 
+    
     return x_list
 
 
@@ -183,3 +208,27 @@ def PreprocessC(inpath,outpath,save=False):
         print("the cleaned dataset of credits is saved in {}".format(outpath))
     
     return df_c
+
+
+def PreprocessK(inpath,outpath,save=False):
+    '''
+    clean the raw keywords.csv dataset
+    
+    Params:
+        path: path of the input dataset(Ex. '../data/raw/keywords.csv')
+        save: specify if the cleaned dataset 
+              need to be saved in the '../data/interim/'
+    '''
+    # read data
+    filename = "keywords.csv"
+    df_k = pd.read_csv(inpath+filename)
+    
+    # convert the json data
+    df_k['keywords'] = df_k['keywords'].apply(Keyw)
+    
+    if save:
+        filename = "keywords_clean.csv"
+        df_k.to_csv(outpath+filename)
+        print("the cleaned dataset of keywords is saved in {}".format(outpath))
+    
+    return df_k

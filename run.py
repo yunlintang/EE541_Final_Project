@@ -12,6 +12,7 @@ def main(targets):
     
     PreprocessMM(data_param["data_path"], data_param["out_path"],True)
     PreprocessC(data_param["data_path"], data_param["out_path"],True)
+    PreprocessK(data_param["data_path"], data_param["out_path"],True)
 
   return
 
