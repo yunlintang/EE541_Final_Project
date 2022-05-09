@@ -11,9 +11,11 @@ pip install -r requirements.txt
   - then download all the datasets from the [Kaggle webstie](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=ratings_small.csv) to the folder `"data/raw"`
 
 ## Layout
-- `src` contains py files
-- `notebooks` contains Jupyter notebook files
+- `config` contains json files for all the input params.
 - `data` contains two folder: `raw` and `interim`
+- `notebooks` contains Jupyter notebook files
+- `src` contains py files
+
 
 ## Building
 - data
