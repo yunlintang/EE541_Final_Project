@@ -6,7 +6,9 @@
 ```
 pip install -r requirements.txt
 ```
-- **IMPORTANT**: create folders under the root folder call `"data/raw"` and `"data/interim"`then download all the datasets from the [Kaggle webstie](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=ratings_small.csv)
+- **IMPORTANT**: 
+  - create folders under the root folder call `"data/raw"` and `"data/interim"`
+  - then download all the datasets from the [Kaggle webstie](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset?select=ratings_small.csv) to the folder `"data/raw"`
 
 ## Layout
 - `src` contains py files
