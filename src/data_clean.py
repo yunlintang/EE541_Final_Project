@@ -179,7 +179,7 @@ def PreprocessMM(inpath,outpath,save=False):
     
     if save:
         filename = "movies_metadata_clean.csv"
-        df_mm.to_csv(outpath+filename)
+        df_mm.to_csv(outpath+filename,index=False)
         print("the cleaned dataset of movies_metadata is saved in {}".format(outpath))
     
     return df_mm
@@ -204,7 +204,7 @@ def PreprocessC(inpath,outpath,save=False):
     
     if save:
         filename = "credits_clean.csv"
-        df_c.to_csv(outpath+filename)
+        df_c.to_csv(outpath+filename,index=False)
         print("the cleaned dataset of credits is saved in {}".format(outpath))
     
     return df_c
@@ -228,7 +228,7 @@ def PreprocessK(inpath,outpath,save=False):
     
     if save:
         filename = "keywords_clean.csv"
-        df_k.to_csv(outpath+filename)
+        df_k.to_csv(outpath+filename,index=False)
         print("the cleaned dataset of keywords is saved in {}".format(outpath))
     
     return df_k
@@ -250,10 +250,12 @@ def combine(inpath,outpath,save=False):
     
     # drop pulicates and reset index
     df_comb = df_comb.drop_duplicates(subset=['id']).reset_index(drop=True)
+    df_comb = df_comb.drop(columns=['adult','imdb_id','popularity','release_date',
+                                    'revenue','status','video'])
     
     if save:
         filename = "combine.csv"
-        df_comb.to_csv(outpath+filename)
+        df_comb.to_csv(outpath+filename,index=False)
         print("the combined dataset is saved in {}".format(outpath))
     
     return df_comb
