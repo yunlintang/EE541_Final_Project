@@ -163,3 +163,19 @@ def multi_onehot(data, n_cast=500, n_crew=500):
     data = pd.concat([data, mlb_result], axis=1)
 
     return data
+
+warnings.filterwarnings('ignore')
+
+def FeatureEng_OneHot(inpath,outpath,save=False):
+    # apply all one-hot process on the data
+    combine_data = pd.read_csv(inpath+"combine.csv")
+    combine_data = data_normalization(combine_data)
+    combine_data = clean_data(combine_data)
+    combine_data = multi_onehot(combine_data)
+
+    if save:
+        filename = "combine_clean_oh.csv"
+        combine_data.to_csv(outpath+filename,index=False)
+        print("the combined dataset is one-hot engineered and saved in {}".format(outpath))
+
+    return combine_data

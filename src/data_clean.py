@@ -234,7 +234,7 @@ def PreprocessK(inpath,outpath,save=False):
     return df_k
 
 
-def combine(inpath,outpath,save=False):
+def DataCleaning(inpath,outpath,save=False):
     # preprocess these three datasets
     df_mm = PreprocessMM(inpath,outpath,True)
     df_c = PreprocessC(inpath,outpath,True)

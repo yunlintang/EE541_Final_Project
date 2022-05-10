@@ -3,14 +3,18 @@ import os
 import json
 
 from src.data_clean import *
+from src.feature_engineering import *
 
 def main(targets):
 
+  with open('config/params.json') as fh:
+    param = json.load(fh)
+
   if 'data' in targets:
-    with open('config/data-params.json') as fh:
-      data_param = json.load(fh)
-    
-    combine(data_param["data_path"], data_param["out_path"],True)
+    DataCleaning(param["raw_data"], param["inte_data"],True)
+  
+  if 'feature' in targets:
+    FeatureEng_OneHot(param['inte_data'],param['inte_data'],True)
 
   return
 
