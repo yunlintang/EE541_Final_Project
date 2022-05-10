@@ -10,9 +10,7 @@ def main(targets):
     with open('config/data-params.json') as fh:
       data_param = json.load(fh)
     
-    PreprocessMM(data_param["data_path"], data_param["out_path"],True)
-    PreprocessC(data_param["data_path"], data_param["out_path"],True)
-    PreprocessK(data_param["data_path"], data_param["out_path"],True)
+    combine(data_param["data_path"], data_param["out_path"],True)
 
   return
 

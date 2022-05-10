@@ -232,3 +232,28 @@ def PreprocessK(inpath,outpath,save=False):
         print("the cleaned dataset of keywords is saved in {}".format(outpath))
     
     return df_k
+
+
+def combine(inpath,outpath,save=False):
+    # preprocess these three datasets
+    df_mm = PreprocessMM(inpath,outpath,True)
+    df_c = PreprocessC(inpath,outpath,True)
+    df_k = PreprocessK(inpath,outpath,True)
+    
+    # convert the type of id to numeric format
+    df_mm['id'] = pd.to_numeric(df_mm['id'],errors='coerce')
+    df_mm = df_mm.dropna(subset=['id'])
+    
+    # merge three datasets
+    df_comb = pd.merge(df_c,df_k,on='id',how='inner')
+    df_comb = pd.merge(df_comb, df_mm,on='id',how='inner')
+    
+    # drop pulicates and reset index
+    df_comb = df_comb.drop_duplicates(subset=['id']).reset_index(drop=True)
+    
+    if save:
+        filename = "combine.csv"
+        df_comb.to_csv(outpath+filename)
+        print("the combined dataset is saved in {}".format(outpath))
+    
+    return df_comb
