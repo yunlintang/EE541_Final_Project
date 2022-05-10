@@ -1,5 +1,10 @@
-python3
 numpy
 pandas
 seaborn
 scipy
+AST
+scikit-learn
+nltk
+sentence-transformers
+torch
+gensim
