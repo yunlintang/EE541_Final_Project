@@ -18,6 +18,40 @@ from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 
 
+def svr_task(train_x, train_y, test_x, test_y):
+    pca_full = PCA(n_components=1000)
+    pca_full.fit(train_x)
+    x_train_select = pca_full.transform(train_x)
+    x_test_select = pca_full.transform(test_x)
+
+    # define feature selection 43
+    # fs = SelectKBest(score_func=f_classif, k=1500)
+    # x_train_select = fs.fit_transform(train_x, train_y)
+    # x_test_select = fs.transform(test_x)
+
+    c_list = []
+    for i in range(1, 2):
+        c_list.append(i * 10)
+
+    gamma_list = []
+    for j in range(1, 2):
+        gamma_list.append(j * 0.001)
+
+    # cross validation
+    param_grid = {'gamma': gamma_list, 'C': c_list, 'kernel': ['rbf']}
+    # model = GridSearchCV(SVR(), param_grid, cv=10, scoring='r2')
+
+    model = SVR(kernel='rbf', C=1000, gamma=0.1)
+
+    # mission 1
+    model.fit(x_train_select, train_y)
+    y_pre1 = model.predict(x_test_select)
+    rmse1 = MSE(test_y, y_pre1) ** 0.5
+    r1 = model.score(x_train_select, test_y)
+    # print(model.best_params_)
+    print(f"SVR for mission1 —— RMSE:{rmse1} R-squared:{r1}")
+
+
 def linear_regression_task(train_x, train_y, test_x, test_y):
     model_linear = LinearRegression()
     # define feature selection 43
@@ -55,15 +89,15 @@ class Net(nn.Module):
 
 
 def train(train_x, train_y, test_x, test_y):
-    # pca_full = PCA(n_components=1500)
-    # pca_full.fit(train_x)
-    # x_train_select = pca_full.transform(train_x)
-    # x_test_select = pca_full.transform(test_x)
+    pca_full = PCA(n_components=1500)
+    pca_full.fit(train_x)
+    x_train_select = pca_full.transform(train_x)
+    x_test_select = pca_full.transform(test_x)
 
     # define feature selection 43
-    fs = SelectKBest(score_func=f_classif, k=1500)
-    x_train_select = fs.fit_transform(train_x, train_y)
-    x_test_select = fs.transform(test_x)
+    # fs = SelectKBest(score_func=f_classif, k=1500)
+    # x_train_select = fs.fit_transform(train_x, train_y)
+    # x_test_select = fs.transform(test_x)
 
     learning_rate = 0.0005
     epochs = 40
@@ -92,6 +126,8 @@ def train(train_x, train_y, test_x, test_y):
     # )
 
     model = Net(n_input=features_num)
+    dummy_input = torch.rand(20, features_num)
+    writer.add_graph(model, dummy_input)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.0001)
     loss_func = nn.MSELoss()
     scheduler = StepLR(optimizer, step_size=20, gamma=0.5)
@@ -116,7 +152,7 @@ def train(train_x, train_y, test_x, test_y):
     for name, param in model.named_parameters():
         writer.add_histogram(tag='Final_' + name + '_data', values=param.data)
 
-    torch.save(model.state_dict(), "../Model_param")
+    # torch.save(model.state_dict(), "../Model_param")
     print("Finished Training")
 
     with torch.no_grad():
