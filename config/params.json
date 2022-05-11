@@ -1,4 +1,8 @@
 {
   "raw_data":"data/raw/",
-  "inte_data":"data/interim/"
+  "inte_data":"data/interim/",
+  "vect_data":"data/interim/vectorizers/",
+  "title":"title_doc2vec.txt",
+  "overview":"overview_doc2vec.txt",
+  "final_data":"data/final/"
 }

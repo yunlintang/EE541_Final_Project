@@ -1,7 +1,23 @@
-from ast import literal_eval
 import numpy as np
 import pandas as pd
+from os.path import exists
+
+from ast import literal_eval
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import MultiLabelBinarizer
+
+import torch
+import torch.nn as nn
+
+from sentence_transformers import SentenceTransformer
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+
 import warnings
 from collections import Counter
 
@@ -86,7 +102,7 @@ def data_normalization(data):
     return data
 
 
-def multi_onehot(data, n_cast=500, n_crew=500):
+def multi_onehot(data, n_cast=300, n_crew=300):
     '''
 
     :param data:
@@ -179,3 +195,251 @@ def FeatureEng_OneHot(inpath,outpath,save=False):
         print("the combined dataset is one-hot engineered and saved in {}".format(outpath))
 
     return combine_data
+
+
+
+# download necessary packages
+nltk.download('wordnet')
+nltk.download('stopwords')
+nltk.download("omw-1.4")
+sw = stopwords.words('english')
+lemmatizer = WordNetLemmatizer()
+
+def remove_stop(x):
+    '''
+    function to remove the stopwords(English) from the
+    input list of string
+    
+    Params:
+        x: a list of string (ex. ['a','b','c'])
+        
+    Returns:
+        returns a new a list of string
+    '''
+    try:
+        new_list = [i for i in x.split(" ") if i not in sw ]
+    except:
+        return np.nan
+    return new_list
+
+
+def lemma(x):
+    '''
+    function to lemmatize the input(a list of string)
+    
+    Params:
+        x: a list of string (ex. ['a','b','c'])
+        
+    Returns:
+        a string the combine all strings in the result list
+        (ex. "a b c")
+    '''
+    if x is np.nan:
+        return ""
+    new_list = []
+    for i in x:
+        new_list += [lemmatizer.lemmatize(i)]
+    
+    return ' '.join(new_list)
+
+
+def tfidf(df,var,mdf=1,mfeatures=None,return_vec=False):
+    '''
+    function to vectorize the text feature(ex. "a b c")
+    into numeric vector by using the TF-IDF method.
+    Note: can be modified to reduce dimension(use "min_df" and "max_features")
+    
+    Params:
+        df: input dataset
+        var: text feature that need to be vectorized
+        mdf: min_df
+        mfeatures: max_features
+        return_vec: if true, return the fitted vectorizer
+        
+    Returns:
+        the vectorized text feature(vector of numeric vectors)
+    '''
+    vectorizer = TfidfVectorizer(stop_words='english',
+                                 min_df=mdf, max_features=mfeatures)
+    vec = vectorizer.fit_transform(df[var])
+    
+    # Note: to vectorize a unseen vector(a string), use:
+    # model.transform()
+    if return_vec:
+        return (vectorizer, vec.toarray())
+    return vec.toarray()
+
+
+def nnemb(df,var,d):
+    '''
+    function to vectorize the input text feature(ex. "a b c") by
+    using the word embedding method from PyTorch
+    Note: compute meach word embedding vecor for each input text 
+    then use it as the numeric representaion of the input text
+    
+    Params:
+        df: the input dataset
+        var: the feature name
+        d: dimension want to be kept
+        
+    Returns:
+        return the vectorized text
+    '''
+    # use countvectorizer to compute the vocab. for the input
+    vectorizer = CountVectorizer()
+    vectorizer.fit(df[var])
+    vocab = vectorizer.vocabulary_
+    # construct the word embedding model
+    embeds = nn.Embedding(len(vocab),d)
+    
+    def ConvertToVec(x):
+        '''
+        function to vectorize the single input of string
+        '''
+        # function to preprocess the string by the countvectorizer
+        t = vectorizer.build_analyzer()
+        # generate tensors for each word in the input string by
+        # indexing the vocab
+        lookup_tensor = torch.tensor([vocab[i] for i in t(x)],dtype=torch.long)
+        # compute the numeric vector
+        x_vec = embeds(lookup_tensor)
+        x_vec = torch.mean(x_vec,axis=0)
+        return x_vec
+    
+    return df[var].apply(ConvertToVec)
+
+
+def senbert(df,var,model_name,params=None,return_vec=False):
+    '''
+    function to vectorize the input text feature by using the
+    selected Sentence-BERT model.
+    (models can be found on:
+    https://docs.google.com/spreadsheets/d/14QplCdTCDwEmTqrn1LH4yrbKvdogK4oQvYO1K1aPR5M/edit#gid=0)
+    
+    Params:
+        df: input dataset
+        var: the name of text feature
+        model_name: name of model
+        params: params for the model
+        return_vec: if true, return the fitted vectorizer
+        
+    Return:
+        the vectorized feature text
+    '''
+    model = SentenceTransformer(model_name)
+    if params is not None:
+        params['sentences'] = df[var]
+        X = model.encode(**params)
+    else:
+        X = model.encode(df[var],batch_size=10)
+        
+    # return the trained model
+    # Note: to vectorize a unseen vector(a string), use:
+    # model.encode()[0]
+    if return_vec:
+        return (model,X)
+    return X
+
+
+def doc2vec(df,var,d,return_vec=False):
+    '''
+    function to convert the input text feature by using
+    the Doc2Vec model by Gensim.
+    
+    Params:
+        df: input dataset
+        var: the name of text feature
+        d: dimension of feature to be kept
+        return_vec: if true, return the fitted vectorizer
+        
+    Returns:
+        
+    '''
+    sen = [TaggedDocument(sen,[i]) for i,sen in enumerate(df[var].values)]
+    model = Doc2Vec(sen,vector_size=d)
+    X = [model.dv[i] for i in range(len(df[var]))]
+    
+    # return the trained model
+    # Note: to vectorize a unseen vector(a list of strings), use:
+    # model.infer_vector()
+    if return_vec:
+        return (model,X)
+    
+    return X
+
+
+def vectorize(df,vectpath):
+    '''
+    function to compute all vectorized text features by using
+    3 different vectorizers: hashing, doc2vec, and sentence-BERT
+    '''
+    # save senbert vectorized vectors for overview
+    X_senbert = senbert(df,'overview','stsb-distilroberta-base-v2')
+    np.savetxt(vectpath+"overview_senbert.txt", X_senbert,delimiter=',')
+
+    # save Doc2Vec vectorized vectors for overview
+    X_doc2vec = doc2vec(df,'overview',500)
+    np.savetxt(vectpath+"overview_doc2vec.txt", X_doc2vec,delimiter=',')
+
+    # save hashing vectorized vectors for overview
+    X_hash = hashing(df,'overview',500)
+    np.savetxt(vectpath+"overview_hash.txt", X_hash,delimiter=',')
+    
+    # save senbert vectorized vectors for title
+    X_senbert_t = senbert(df,'title','stsb-distilroberta-base-v2')
+    np.savetxt(vectpath+"title_senbert.txt", X_senbert_t,delimiter=',')
+
+    # save Doc2Vec vectorized vectors for title
+    X_doc2vec_t = doc2vec(df,'title',500)
+    np.savetxt(vectpath+"title_doc2vec.txt", X_doc2vec_t,delimiter=',')
+
+    # save hashing vectorized vectors for title
+    X_hash_t = hashing(df,'title',500)
+    np.savetxt(vectpath+"title_hash.txt", X_hash_t,delimiter=',')
+    
+    print("all vectorized text features are saved in {}".format(vectpath))
+    
+    return
+
+
+
+def Combine_Features(inpath,vectpath,title_,overview_,outpath,save=False):
+    '''
+    function to combine all features
+
+    Params:
+        inpath: the path for the cleaned dataset
+        vectpath: path for the vectorized text features
+        title_: the file name of selected vectors for "title"
+        overview_: the file name of selected vectors for "overview"
+        outpath: the path for final dataset
+    '''
+    # read the combine data after one-hot enginnering
+    df = pd.read_csv(inpath+'combine_clean_oh.csv')
+    
+    # preprocess the text features
+    df['title'] = df['title'].apply(remove_stop).apply(lemma)
+    df['overview'] = df['overview'].apply(remove_stop).apply(lemma)
+    
+    # vectorize the text features if not exsited
+    if not (exists(vectpath+title_) and exists(vectpath+overview_)):
+        vectorize(df,vectpath)
+        
+    # read the vectorized text features("overview" and "title")
+    df_overview = pd.read_csv(vectpath+overview_,header=None).add_prefix("Overview_")
+    df_title = pd.read_csv(vectpath+title_,header=None).add_prefix("title_")
+    
+    # combine the dataset
+    df_comb = pd.concat([df,df_overview,df_title],axis=1)
+    # drop features and move score to the last column
+    df_comb['new_score'] = df_comb['score']
+    df_comb = df_comb.drop(columns=['overview','title','keywords','score','id'])
+    df_comb = df_comb.rename(columns={'new_score':'score'})
+    
+    # save
+    if save:
+        filename = "data.csv"
+        df_comb.to_csv(outpath+filename,index=False)
+        print("the final dataset after all feature enginnerings is saved in {}".format(outpath))
+        
+    return df_comb

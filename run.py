@@ -15,9 +15,11 @@ def main(targets):
   
   if 'feature' in targets:
     FeatureEng_OneHot(param['inte_data'],param['inte_data'],True)
+    Combine_Features(param['inte_data'],param['vect_data'],param['title'],
+                     param['overview'],param['final_data'],True)
 
   return
 
 if __name__ == '__main__':
-  targets = sys.argv[1]
+  targets = sys.argv[1:]
   main(targets)
