@@ -7,3 +7,4 @@ sentence-transformers
 torch
 gensim
 astropy
+wordcloud
