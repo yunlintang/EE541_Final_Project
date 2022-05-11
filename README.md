@@ -14,7 +14,8 @@ pip install -r requirements.txt
 
 ## Layout
 - `config` contains json files for all the input params.
-- `data` contains two folder: `raw` and `interim`
+- `data` contains two folder: `raw`, `interim` and `final`
+  - `data/interim` contains one folder `vectorizers`
 - `notebooks` contains Jupyter notebook files
 - `src` contains py files
 
