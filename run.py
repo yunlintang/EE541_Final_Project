@@ -2,11 +2,14 @@ import sys
 import os
 import json
 
+from src.env_setup import *
 from src.data_clean import *
 from src.feature_engineering import *
 from src.model_building import *
 
 def main(targets):
+
+  make_datadir()
 
   with open('config/params.json') as fh:
     param = json.load(fh)
