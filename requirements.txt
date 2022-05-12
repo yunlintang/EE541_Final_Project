@@ -8,3 +8,5 @@ torch
 gensim
 astropy
 wordcloud
+torchvision
+tensorboard

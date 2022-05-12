@@ -1,19 +1,24 @@
+import pandas as pd
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.decomposition import PCA
-from sklearn.feature_selection import SelectKBest, f_classif
+
 from torch.optim.lr_scheduler import StepLR
 import torchvision
 import torchvision.transforms as transforms
 import torch.utils.data as Data
 from torch.utils.tensorboard import SummaryWriter
+
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error as MSE
-
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
 
 import matplotlib.pyplot as plt
 
@@ -160,7 +165,7 @@ def train(train_x, train_y, test_x, test_y):
         outputs = model(tensor_test_x)
         r2 = r2_score(tensor_test_y, outputs)
         rmse = MSE(tensor_test_y, outputs) ** 0.5
-        print(f"R-2:{r2}, RMSE:{rmse}")
+        print(f"neural network —— RMSE:{rmse}, R-2:{r2}")
         pre = outputs.tolist()
         true = tensor_test_y.tolist()
         plt.title("Movie ratings vs Predicted ratings")
@@ -170,3 +175,52 @@ def train(train_x, train_y, test_x, test_y):
 
     plt.axline((0, 0), slope=1, color="r", ls="--", lw=2.5)
     plt.show()
+
+    return
+
+
+def TrainModel(inpath):
+    # read final data
+    df = pd.read_csv(inpath+'data.csv')
+    df['runtime'] = df['runtime'].fillna(0)
+
+    # get the training and testing sets
+    X = df.drop(columns=['score'])
+    y = df['score']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7)
+
+    # train for neural network and linear regression model
+    train(X_train,y_train,X_test,y_test)
+    linear_regression_task(X_train,y_train,X_test,y_test)
+
+
+
+def select_vectorizer(inpath):
+    '''
+    function for evaluate different vectorizers on the cleaned 
+    combined final dataset. to modify the vectorizer, change the
+    value of "title" and "overview" in the "config/params.json".
+    Ex. use Doc2Vec for title feature, then assign "title":"title_doc2vec.txt";
+    use hashing for overview feature, then assign "overview":"overview_hash.txt"
+    
+    Param:
+        inpath: the path for final dataset
+        
+    Returns:
+        the R2 score of the fitted regressor on test set
+    '''
+    # evaluate the result for different vectorizers
+    df = pd.read_csv(inpath+"data.csv")
+    df['runtime'] = df['runtime'].fillna(0)
+
+    # get the training and testing data
+    X = df.drop(columns=['score'])
+    y = df['score']
+    X_train, X_test, y_train, y_test = train_test_split(X,y,train_size=0.7)
+
+    # train a linear regressor
+    reg = LinearRegression()
+    reg.fit(X_train,y_train)
+    score = reg.score(X_test,y_test)
+
+    return score
